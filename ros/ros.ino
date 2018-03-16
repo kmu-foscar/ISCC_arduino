@@ -1,6 +1,7 @@
 #include <ros.h>
-#include >std_msgs/Empty.h>
-#include <race/drive_values.h>
+#include <std_msgs/UInt16.h>
+#include <std_msgs/Bool.h>
+#include <std_msgs/Empty.h>
 #include <Servo.h>
 
 #define SERVO_LEFT_MAX 56
@@ -11,7 +12,7 @@
 #define THROTTLE_MAX 2000
 
 ros::NodeHandle nh;
-boolean flagStop = false;
+boolean flagStart = true;
 Servo throttle;
 Servo steering;
 
@@ -19,42 +20,28 @@ int pos = 0;
 int pin = 7;
 int pin2 = 6;
 
-std_msg::Int32 str_msg;
-void messageDrive(const race::drive_values& msg)
-{
-  if(flagStop == false)
+void messageDrive(const std_msgs::UInt16& msg)
+{  
+  if(flagStart == true)
   {
-   int throttle_val = map(msg.throttle, 0, 100, THROTTLE_MIN, THROTTLE_MAX);
+   //int throttle_val = map(msg.throttle, 0, 100, THROTTLE_MIN, THROTTLE_MAX);
+   throttle.write(1540);
    int steering_val;
-   if(msg.steering < 0) 
-   {
-     steering_val = map(msg.steering, -100, 0, SERVO_LEFT_MAX, SERVO_CENTER_VAL);
-   }
-   else 
-   {
-     steering_val = map(msg.steering, 0, 100, SERVO_CENTER_VAL, SERVO_RIGHT_MAX);
-   }
+   steering_val = map(msg.data, 0, 200, SERVO_LEFT_MAX, SERVO_RIGHT_MAX);
+   steering.write(steering_val);
   }
   else
   {
-    throttle.write(1530);
+    throttle.write(1500);
     steering.write(SERVO_CENTER_VAL);
   }
 }
-
-void messageEmergencyStop( const std_msgs::Bool& flag)
+void messageThrottle(const std_msgs::Bool& msg)
 {
-  flagStop = flag.data; 
-  if(flagStop == true)
-  {
-    throttle.write(1530);
-    steering.write(SERVO_CENTER_VAL);
-  }
+  flagStart = msg.data;
 }
-
-ros::Subscriber<race::drive_values> sub_drive("drive_pwm", &messageDrive);
-ros::Subscriber<std_msgs::Bool> sub_stop("eStop", &messageEmergencyStop);
-
+ros::Subscriber<std_msgs::UInt16> sub_drive("Controller", &messageDrive);
+ros::Subscriber<std_msgs::Bool> sub_throttle("throttle", &messageThrottle);
 void setup() {
   throttle.attach(pin);
   steering.attach(pin2);
@@ -65,7 +52,7 @@ void setup() {
   }
   nh.initNode();
   nh.subscribe(sub_drive);
-  nh.subscribe(sub_stop);
+  nh.subscribe(sub_throttle);
 }
 
 void loop() {
