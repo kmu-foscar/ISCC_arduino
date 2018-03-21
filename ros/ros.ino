@@ -41,12 +41,12 @@ void messageDrive(const race::drive_values &msg) {
     steering.write(SERVO_CENTER_VAL);
   }
 }
-void messageThrottle(const std_msgs::Bool &msg) { 
+void messageEStop(const std_msgs::Bool &msg) { 
   flagEStop = msg.data; 
 }
 
 ros::Subscriber<race::drive_values> sub_drive("Control", &messageDrive);
-ros::Subscriber<std_msgs::Bool> sub_eStop("e_Stop", &messageThrottle);
+ros::Subscriber<std_msgs::Bool> sub_eStop("e_Stop", &messageEStop);
 
 void setup() {
   throttle.attach(pin);
